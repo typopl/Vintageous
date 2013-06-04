@@ -922,7 +922,7 @@ class _vi_j_motion(sublime_plugin.TextCommand):
                         return sublime.Region(s.a, end)
 
             if mode == MODE_VISUAL_LINE:
-                if s.a < s.b:
+                if s.a <= s.b:
                     current_row = view.rowcol(s.b - 1)[0]
                     target_row = min(current_row + count, view.rowcol(view.size())[0])
 
@@ -1011,7 +1011,7 @@ class _vi_k_motion(sublime_plugin.TextCommand):
                         return sublime.Region(s.a, view.line(target_pt).b)
 
             if mode == MODE_VISUAL_LINE:
-                if s.a < s.b:
+                if s.a <= s.b:
                     current_row = view.rowcol(s.b - 1)[0]
                     target_row = min(current_row - count, view.rowcol(view.size())[0])
                     target_pt = view.text_point(target_row, 0)
