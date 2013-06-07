@@ -142,64 +142,56 @@ def find_tag_text_object(view, s, inclusive=False):
 
 
 def find_next_lone_bracket(view, start, items, unbalanced=0):
-    # TODO: Extract common functionality from here and the % motion instead of duplicating code.
-    new_start = start
-    for i in range(unbalanced or 1):
-        next_closing_bracket = find_in_range(view, items[1],
-                                                  start=start,
-                                                  end=view.size(),
-                                                  flags=sublime.IGNORECASE)
-        if next_closing_bracket is None:
-            # Unbalanced items; nothing we can do.
-            return
-        new_start = next_closing_bracket.end()
+    brackets = 0
+    size = view.size()
+    openBracket = items[0]
+    if len(openBracket) > 1:
+        openBracket = openBracket[1:]
+    closeBracket = items[1]
+    if len(closeBracket) > 1:
+        closeBracket = closeBracket[1:]
 
-    nested = 0
     while True:
-        next_opening_bracket = find_in_range(view, items[0],
-                                              start=start,
-                                              end=next_closing_bracket.b,
-                                              flags=sublime.IGNORECASE)
-        if not next_opening_bracket:
-            break
-        nested += 1
-        start = next_opening_bracket.end()
+        if not view.score_selector(start, 'comment') and not view.score_selector(start, 'string'):
+            c = view.substr(start)
+            if c == closeBracket:
+                if brackets <= 0:
+                    break
+                brackets -= 1
+            elif c == openBracket:
+                brackets += 1
 
-    if nested > 0:
-        return find_next_lone_bracket(view, next_closing_bracket.end(),
-                                                  items,
-                                                  nested)
-    else:
-        return next_closing_bracket
+        start += 1
+        if start >= size:
+            return
+
+    return sublime.Region(start, start+1)
 
 
 def find_prev_lone_bracket(view, start, tags, unbalanced=0):
-    # TODO: Extract common functionality from here and the % motion instead of duplicating code.
-    new_start = start
-    for i in range(unbalanced or 1):
-        prev_opening_bracket = reverse_search_by_pt(view, tags[0],
-                                                  start=0,
-                                                  end=new_start,
-                                                  flags=sublime.IGNORECASE)
-        if prev_opening_bracket is None:
-            # Unbalanced tags; nothing we can do.
-            return
-        new_start = prev_opening_bracket.begin()
+    brackets = 0
+    openBracket = tags[0]
+    if len(openBracket) > 1:
+        openBracket = openBracket[1:]
+    closeBracket = tags[1]
+    if len(closeBracket) > 1:
+        closeBracket = closeBracket[1:]
+    start -= 1
+    if start < 0:
+        return
 
-    nested = 0
     while True:
-        next_closing_bracket = reverse_search_by_pt(view, tags[1],
-                                              start=prev_opening_bracket.a,
-                                              end=start,
-                                              flags=sublime.IGNORECASE)
-        if not next_closing_bracket:
-            break
-        nested += 1
-        start = next_closing_bracket.begin()
+        if not view.score_selector(start, 'comment') and not view.score_selector(start, 'string'):
+            c = view.substr(start)
+            if c == openBracket:
+                if brackets == 0:
+                    break
+                brackets += 1
+            elif c == closeBracket:
+                brackets -= 1
 
-    if nested > 0:
-        return find_prev_lone_bracket(view, prev_opening_bracket.begin(),
-                                                  tags,
-                                                  nested)
-    else:
-        return prev_opening_bracket
+        start -= 1
+        if start < 0:
+            return
+
+    return sublime.Region(start, start+1)
